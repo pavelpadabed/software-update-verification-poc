@@ -1,0 +1,56 @@
+{
+  "type": "object",
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": [
+        "accept",
+        "reject",
+        "manual_review"
+      ]
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "windows",
+        "macos",
+        "ios",
+        "android",
+        "linux",
+        "unknown"
+      ]
+    },
+    "evidence_codes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "explicit_up_to_date",
+          "optional_update_only",
+          "mandatory_update_available",
+          "installation_in_progress",
+          "restart_required",
+          "installation_error",
+          "update_check_error",
+          "system_info_only",
+          "successful_update_only",
+          "contradictory_information",
+          "unreadable",
+          "irrelevant_image",
+          "insufficient_evidence"
+        ]
+      },
+      "minItems": 1
+    },
+    "reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "decision",
+    "platform",
+    "evidence_codes",
+    "reason"
+  ],
+  "additionalProperties": false
+}
