@@ -152,3 +152,46 @@ class AnalysisResponse:
             raise TypeError("output_tokens must be an integer")
         if self.output_tokens < 0:
             raise ValueError("output_tokens must not be negative")
+
+
+@dataclass(frozen=True, slots=True)
+class AnalysisFailure:
+    failure_code: str
+    diagnostic_message: str
+    retryable: bool
+    request_id: str | None = None
+    status_code: int | None = None
+    response_status: str | None = None
+    response_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.failure_code, str):
+            raise TypeError("failure_code must be a string")
+        if not self.failure_code.strip():
+            raise ValueError("failure_code must not be blank")
+        if not isinstance(self.diagnostic_message, str):
+            raise TypeError("diagnostic_message must be a string")
+        if not self.diagnostic_message.strip():
+            raise ValueError("diagnostic_message must not be blank")
+        if type(self.retryable) is not bool:
+            raise TypeError("retryable must be a boolean")
+        if self.request_id is not None:
+            if not isinstance(self.request_id, str):
+                raise TypeError("request_id must be a string or None")
+            if not self.request_id.strip():
+                raise ValueError("request_id must not be blank")
+        if self.status_code is not None:
+            if type(self.status_code) is not int:
+                raise TypeError("status_code must be an integer or None")
+            if not 400 <= self.status_code <= 599:
+                raise ValueError("status_code must be between 400 and 599")
+        if self.response_status is not None:
+            if not isinstance(self.response_status, str):
+                raise TypeError("response_status must be a string or None")
+            if not self.response_status.strip():
+                raise ValueError("response_status must not be blank")
+        if self.response_id is not None:
+            if not isinstance(self.response_id, str):
+                raise TypeError("response_id must be a string or None")
+            if not self.response_id.strip():
+                raise ValueError("response_id must not be blank")

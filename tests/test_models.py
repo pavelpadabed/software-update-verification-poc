@@ -1,10 +1,12 @@
 import hashlib
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 import pytest
 
 from software_update_verification.models import (
+    AnalysisFailure,
     AnalysisResponse,
     ExperimentConfig,
     LoadedImage,
@@ -775,3 +777,205 @@ def test_analysis_response_accepts_zero_token_counts(field_name: str) -> None:
     result = _make_analysis_response(**{field_name: 0})
 
     assert getattr(result, field_name) == 0
+
+
+def _make_analysis_failure(**overrides: object) -> AnalysisFailure:
+    data = {
+        "failure_code": "timeout",
+        "diagnostic_message": "Request timed out",
+        "retryable": True,
+        "request_id": None,
+        "status_code": None,
+        "response_status": None,
+        "response_id": None,
+    }
+    data.update(overrides)
+    return AnalysisFailure(**data)
+
+
+def test_analysis_failure_is_created_with_valid_values() -> None:
+    expected_analysis_failure = {
+        "failure_code": "rate_limit",
+        "diagnostic_message": "Rate limit exceeded",
+        "retryable": True,
+        "request_id": "req_test_001",
+        "status_code": 429,
+        "response_status": None,
+        "response_id": None,
+    }
+
+    result = AnalysisFailure(**expected_analysis_failure)
+
+    assert isinstance(result, AnalysisFailure)
+    assert asdict(result) == expected_analysis_failure
+
+
+@pytest.mark.parametrize(
+    "invalid_failure_code",
+    [None, True, 123, 13.3, b"hello"],
+)
+def test_analysis_failure_rejects_non_string_failure_code(
+    invalid_failure_code: object,
+) -> None:
+    with pytest.raises(
+        TypeError,
+        match="failure_code must be a string",
+    ):
+        _make_analysis_failure(failure_code=invalid_failure_code)
+
+
+@pytest.mark.parametrize("blank_failure_code", ["", " ", "\t", "\n", "\t\n"])
+def test_analysis_failure_rejects_blank_failure_code(
+    blank_failure_code: str,
+) -> None:
+    with pytest.raises(ValueError, match="failure_code must not be blank"):
+        _make_analysis_failure(failure_code=blank_failure_code)
+
+
+@pytest.mark.parametrize(
+    "invalid_diagnostic_message",
+    [None, True, 123, 13.3, b"Request timed out"],
+)
+def test_analysis_failure_rejects_non_string_diagnostic_message(
+    invalid_diagnostic_message: object,
+) -> None:
+    with pytest.raises(TypeError, match="diagnostic_message must be a string"):
+        _make_analysis_failure(diagnostic_message=invalid_diagnostic_message)
+
+
+@pytest.mark.parametrize(
+    "blank_diagnostic_message",
+    ["", " ", "\t", "\n", "\t\n"],
+)
+def test_analysis_failure_rejects_blank_diagnostic_message(
+    blank_diagnostic_message: str,
+) -> None:
+    with pytest.raises(ValueError, match="diagnostic_message must not be blank"):
+        _make_analysis_failure(diagnostic_message=blank_diagnostic_message)
+
+
+@pytest.mark.parametrize(
+    "invalid_retryable",
+    [None, 0, 1, "true", b"true", []],
+)
+def test_analysis_failure_rejects_non_boolean_retryable(
+    invalid_retryable: object,
+) -> None:
+    with pytest.raises(TypeError, match="retryable must be a boolean"):
+        _make_analysis_failure(retryable=invalid_retryable)
+
+
+@pytest.mark.parametrize("retryable", [True, False])
+def test_analysis_failure_accepts_boolean_retryable(retryable: bool) -> None:
+    result = _make_analysis_failure(retryable=retryable)
+
+    assert result.retryable is retryable
+
+
+@pytest.mark.parametrize("field_name", ["request_id", "response_id"])
+@pytest.mark.parametrize(
+    "invalid_identifier",
+    [True, 123, 13.3, b"identifier", []],
+)
+def test_analysis_failure_rejects_non_string_optional_identifiers(
+    field_name: str,
+    invalid_identifier: object,
+) -> None:
+    with pytest.raises(
+        TypeError,
+        match=rf"{field_name} must be a string or None",
+    ):
+        _make_analysis_failure(**{field_name: invalid_identifier})
+
+
+@pytest.mark.parametrize("field_name", ["request_id", "response_id"])
+@pytest.mark.parametrize("blank_identifier", ["", " ", "\t", "\n", "\t\n"])
+def test_analysis_failure_rejects_blank_optional_identifiers(
+    field_name: str,
+    blank_identifier: str,
+) -> None:
+    with pytest.raises(ValueError, match=rf"{field_name} must not be blank"):
+        _make_analysis_failure(**{field_name: blank_identifier})
+
+
+@pytest.mark.parametrize("field_name", ["request_id", "response_id"])
+def test_analysis_failure_accepts_none_optional_identifiers(
+    field_name: str,
+) -> None:
+    result = _make_analysis_failure(**{field_name: None})
+
+    assert getattr(result, field_name) is None
+
+
+@pytest.mark.parametrize(
+    "invalid_status_code",
+    [True, False, "429", 429.0, b"429", []],
+)
+def test_analysis_failure_rejects_non_integer_status_code(
+    invalid_status_code: object,
+) -> None:
+    with pytest.raises(
+        TypeError,
+        match="status_code must be an integer or None",
+    ):
+        _make_analysis_failure(status_code=invalid_status_code)
+
+
+@pytest.mark.parametrize("invalid_status_code", [-1, 0, 399, 600, 999])
+def test_analysis_failure_rejects_status_code_outside_error_range(
+    invalid_status_code: int,
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match="status_code must be between 400 and 599",
+    ):
+        _make_analysis_failure(status_code=invalid_status_code)
+
+
+@pytest.mark.parametrize("status_code", [None, 400, 429, 500, 599])
+def test_analysis_failure_accepts_valid_optional_status_code(
+    status_code: int | None,
+) -> None:
+    result = _make_analysis_failure(status_code=status_code)
+
+    assert result.status_code == status_code
+
+
+@pytest.mark.parametrize(
+    "invalid_response_status",
+    [True, 123, 13.3, b"failed", []],
+)
+def test_analysis_failure_rejects_non_string_response_status(
+    invalid_response_status: object,
+) -> None:
+    with pytest.raises(
+        TypeError,
+        match="response_status must be a string or None",
+    ):
+        _make_analysis_failure(response_status=invalid_response_status)
+
+
+@pytest.mark.parametrize(
+    "blank_response_status",
+    ["", " ", "\t", "\n", "\t\n"],
+)
+def test_analysis_failure_rejects_blank_response_status(
+    blank_response_status: str,
+) -> None:
+    with pytest.raises(ValueError, match="response_status must not be blank"):
+        _make_analysis_failure(response_status=blank_response_status)
+
+@pytest.mark.parametrize(
+    "response_status",
+    [
+        None,
+        "completed",
+        "future_status",
+    ],
+)
+def test_analysis_failure_accepts_optional_nonblank_response_status(
+    response_status: str | None,
+) -> None:
+    result = _make_analysis_failure(response_status=response_status)
+
+    assert result.response_status == response_status
