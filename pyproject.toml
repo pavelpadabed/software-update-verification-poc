@@ -9,6 +9,8 @@ description = "Proof of concept for AI-assisted software update verification."
 requires-python = ">=3.13"
 dependencies = [
     "openai==3.6.0",
+    "pydantic>=2,<3",
+    "python-dotenv",
 ]
 
 [project.optional-dependencies]

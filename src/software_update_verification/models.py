@@ -1,8 +1,31 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+)
 
 SUPPORTED_IMAGE_DETAILS = frozenset({"auto", "high", "low"})
+EvidenceCode = Literal[
+    "explicit_up_to_date",
+    "optional_update_only",
+    "mandatory_update_available",
+    "installation_in_progress",
+    "restart_required",
+    "installation_error",
+    "update_check_error",
+    "system_info_only",
+    "successful_update_only",
+    "contradictory_information",
+    "unreadable",
+    "irrelevant_image",
+    "insufficient_evidence",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -195,3 +218,26 @@ class AnalysisFailure:
                 raise TypeError("response_id must be a string or None")
             if not self.response_id.strip():
                 raise ValueError("response_id must not be blank")
+
+
+class VerificationResult(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+    decision: Literal["accept", "reject", "manual_review"]
+    platform: Literal[
+        "windows",
+        "macos",
+        "ios",
+        "android",
+        "linux",
+        "unknown",
+    ]
+    evidence_codes: list[EvidenceCode] = Field(min_length=1)
+    reason: str
+
+    @field_validator("reason")
+    @classmethod
+    def validate_reason(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("reason must not be blank")
+
+        return value
