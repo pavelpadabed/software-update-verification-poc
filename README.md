@@ -148,7 +148,7 @@ python -m pytest
 ```
 
 The test suite uses fakes for OpenAI interactions and does not make paid API
-requests. At the time of publication preparation, it contains 399 passing test
+requests. At the time of publication preparation, it contains 400 passing test
 cases, including parameterized cases.
 
 ## Running the local smoke test
