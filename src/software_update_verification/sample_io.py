@@ -1,8 +1,8 @@
 import hashlib
+from collections.abc import Iterator
 from pathlib import Path
 
-from software_update_verification.models import Sample
-from software_update_verification.models import LoadedImage
+from software_update_verification.models import LoadedImage, Sample
 
 SUPPORTED_IMAGE_SUFFIXES = frozenset(
     {
@@ -60,3 +60,13 @@ def load_image(sample: Sample) -> LoadedImage:
         media_type=media_type,
         actual_sha256=actual_sha256,
     )
+
+
+def iter_image_paths(directory: Path) -> Iterator[Path]:
+    for path in sorted(directory.iterdir()):
+        if not path.is_file():
+            continue
+        suffix = path.suffix.lower()
+        if suffix not in SUPPORTED_IMAGE_SUFFIXES:
+            continue
+        yield path
