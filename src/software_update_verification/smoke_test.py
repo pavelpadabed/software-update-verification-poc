@@ -3,6 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from software_update_verification.arg_parser import create_parser
 from software_update_verification.config_builder import build_experiment_config
 from software_update_verification.models import AnalysisFailure, VerificationResult
 from software_update_verification.parser import parse_verification_output
@@ -19,16 +20,13 @@ PROMPT_VERSION = "v3"
 SCHEMA_VERSION = "v1"
 IMAGE_DETAIL = "low"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-IMAGE_DIRECTORY_PATH = PROJECT_ROOT / "smoke_test" / "images"
 
 
-def main() -> None:
+def main(image_directory: Path) -> None:
     load_dotenv(PROJECT_ROOT / ".env")
     client = OpenAI()
 
     analyzer = OpenAIImageAnalyzer(client)
-
-    image_directory = IMAGE_DIRECTORY_PATH
 
     prompt_path = PROJECT_ROOT / "prompts" / "verification_v3.txt"
     schema_path = PROJECT_ROOT / "schemas" / "verification_response_v1.json"
@@ -92,4 +90,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = create_parser()
+    args = parser.parse_args()
+    image_directory = args.image_directory
+    main(image_directory)
